@@ -95,7 +95,7 @@ ${readMore}
     });
 };
 
-handler.command = ["menudownload"];
+handler.command = ["menudownloader"];
 handler.category = "info";
 handler.register = true;
 handler.description = "Menampilkan daftar Menu download.";
