@@ -95,7 +95,7 @@ ${readMore}
     });
 };
 
-handler.command = ["menuapanel"];
+handler.command = ["menupanel"];
 handler.category = "info";
 handler.register = true;
 handler.description = "Menampilkan daftar Menu panel.";
