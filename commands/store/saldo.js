@@ -12,7 +12,7 @@ const handler = async (m, {
     let who
     let user = db.list().user[m.sender]
     let name = await conn.getName(m.sender)
-    if (m.isGroup) who = m.mentionedJid[0] ? m.mentionedJid[0] : m.sender
+    if (m.isGroup) who = m.mentionedJid ? m.mentionedJid : m.sender
     else who = m.sender
     if (typeof db.list().user[who] == 'undefined') throw 'Pengguna tidak ada didalam data base'
     m.reply(`*━━ CHECK YOUR INFO ━━*
