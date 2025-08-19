@@ -1,0 +1,40 @@
+{
+  "users": {
+    "6283197291875": {
+      "name": "FOR THE GROUND",
+      "nowa": "6283197291875",
+      "id": "61615",
+      "date": "8 April 2024",
+      "lastsaldo": 11900,
+      "deposit": 50000,
+      "limitdepo": 1
+    },
+    "6282241182487": {
+      "name": "NdikzOne",
+      "nowa": "6282241182487",
+      "id": "26042",
+      "date": "25 Desember 2024",
+      "lastsaldo": 100,
+      "deposit": "1000",
+      "limitdepo": 1
+    },
+    "6285134481895": {
+      "name": "Ndikz",
+      "nowa": "6285134481895",
+      "id": "93449",
+      "date": "19 Agustus 2025",
+      "lastsaldo": 100,
+      "deposit": "999999",
+      "limitdepo": 1
+    },
+    "6281949653378": {
+      "name": "𝓚",
+      "nowa": "6281949653378",
+      "id": "60610",
+      "date": "19 Agustus 2025",
+      "lastsaldo": 100,
+      "deposit": "1000",
+      "limitdepo": 1
+    }
+  }
+}
