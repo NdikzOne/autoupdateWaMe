@@ -73,11 +73,6 @@ Jangan lupa makan dan senyum hari ini~ 🫶`;
                                     id: '.menustore'
                                 },
                                 {
-                                    title: 'MenuBuyPanel 📦',
-                                    description: 'Menampilkan Buy Panel Menu',
-                                    id: '.menubuyyer'
-                                },
-                                {
                                     title: 'MainMenu 🚂',
                                     description: 'Menampilkan Main Menu',
                                     id: '.menumain'
