@@ -1505,7 +1505,7 @@ handler.command = ["buysrv-1gb",
     "buysrv-9gb",
     "buysrv-unli"
 ];
-handler.category = 'buyyerPanel';
+handler.category = 'store';
 handler.description = 'Beli Panel dengan harga tertentu.';
 handler.register = true;
 
