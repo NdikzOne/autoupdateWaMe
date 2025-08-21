@@ -187,7 +187,7 @@ KETIK /canceldepo UNTUK MEMBATALKAN
                                 break;
                             }
                             if (status == 'success') {
-                                db.data.users[m.sender].saldo += res.data.data.nominal * 1
+                                db.list().user[m.sender].saldo += res.data.data.nominal * 1
                                 let anjay = `*_── 「 DEPOSIT 」 ──_*
            
  *_⚡Nominal: ${res.data.data.nominal}_*
