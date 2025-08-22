@@ -74,7 +74,7 @@ Jangan lupa makan dan senyum hari ini~ 🫶`;
                                 },
                                 {
                                     title: 'RekapMenu 🖨',
-                                    description: 'Menampilkan Rekal Menu',
+                                    description: 'Menampilkan Rekap Menu',
                                     id: '.menurekap'
                                 },
                                 {
