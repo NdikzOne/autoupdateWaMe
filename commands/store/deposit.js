@@ -137,16 +137,20 @@ Ketik /deposit cancel (Untuk Membatalkan)`
                         //   let anu = await convertToUrl(buffer)
                         //  let anu = `https://api.lolhuman.xyz/api/qrcode?apikey=IchanRTZ&text=${res.data.data.qr_string}`
                         //  let qrcode = await toqrcode(res.data.data.qr_string)
-                        let abc = `── 「 DEPOSIT」 ──
-           
-⚡Id: ${res.data.data.id}
-⚡Nominal: ${res.data.data.nominal}
-⚡Di Buat: ${res.data.data.created_at}
-⚡Status: ${res.data.data.status}
- 
- **BATAS MINIMAL TRANSFER 1JAM DAN KETIKA LEWAT SISTEM AKAN OTOMATIS MEMBATALKAN TOPUP INI**
-KETIK /canceldepo UNTUK MEMBATALKAN
- *_MAD BAPUQ_*`
+                        const abc = `── 「 DEPOSIT 」 ──
+
+⚡ Id: ${res.data.data.id}
+⚡ Reff ID: ${res.data.data.reff_id}
+💰 Nominal: Rp${toRupiah(res.data.data.nominal)}
+💸 Fee: Rp${toRupiah(res.data.data.fee)}
+📥 Diterima: Rp${toRupiah(res.data.data.get_balance)}
+📌 Status: ${res.data.data.status}
+🕒 Dibuat: ${res.data.data.created_at}
+⏳ Expired: ${res.data.data.expired_at}
+
+_Scan QR di atas untuk pembayaran_
+⏳ Batas transfer 1 jam, lewat dari itu auto expired
+❌ Cancel: /deposit cancel`;
                         conn.sendMessage(m.chat, {
                             image: buffer,
                             caption: abc
@@ -188,15 +192,11 @@ KETIK /canceldepo UNTUK MEMBATALKAN
                             }
                             if (status == 'success') {
                                 db.list().user[m.sender].saldo += res.data.data.nominal * 1
-                                let anjay = `*_── 「 DEPOSIT 」 ──_*
-           
- *_⚡Nominal: ${res.data.data.nominal}_*
-  _⚡Reff Id: ${res.data.data.reff_id}_
-  _⚡Id: ${res.data.data.id}_
-  _⚡ Status: SUKSES_
- 
- 
- @${wm}`
+                                let anjay = `✅ *DEPOSIT SUKSES*
+
+💰 Nominal: Rp${toRupiah(res.data.data.nominal)}
+📥 Masuk: Rp${toRupiah(res.data.data.get_balance)}
+📌 Status: SUKSES`;
                                 m.reply(anjay)
                                 fs.unlinkSync(`./database/datasaldo/${sender}.json`)
                                 break;
