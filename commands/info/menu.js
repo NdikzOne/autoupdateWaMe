@@ -70,7 +70,7 @@ Jangan lupa makan dan senyum hari ini~ 🫶`;
                                 {
                                     title: 'MenuStore 🛍',
                                     description: 'Menampilkan Store Menu',
-                                    id: '.menustore'
+                                    id: '.menurekap'
                                 },
                                 {
                                     title: 'RekapMenu 🖨',
