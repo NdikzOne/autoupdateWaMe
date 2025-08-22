@@ -73,6 +73,11 @@ Jangan lupa makan dan senyum hari ini~ 🫶`;
                                     id: '.menustore'
                                 },
                                 {
+                                    title: 'RekapMenu 🖨',
+                                    description: 'Menampilkan Rekal Menu',
+                                    id: '.menumain'
+                                },
+                                {
                                     title: 'MainMenu 🚂',
                                     description: 'Menampilkan Main Menu',
                                     id: '.menumain'
