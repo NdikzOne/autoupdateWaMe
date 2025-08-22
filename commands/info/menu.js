@@ -70,12 +70,12 @@ Jangan lupa makan dan senyum hari ini~ 🫶`;
                                 {
                                     title: 'MenuStore 🛍',
                                     description: 'Menampilkan Store Menu',
-                                    id: '.menurekap'
+                                    id: '.menustore'
                                 },
                                 {
                                     title: 'RekapMenu 🖨',
                                     description: 'Menampilkan Rekal Menu',
-                                    id: '.menumain'
+                                    id: '.menurekap'
                                 },
                                 {
                                     title: 'MainMenu 🚂',
