@@ -5,7 +5,6 @@ const Func = require("../core/function.js");
 const caseHandler = require("../case.js");
 const { incrementCommand } = require("../core/stats");
 const isNumber = x => typeof x === 'number' && !isNaN(x)
-
 // Helper untuk membersihkan JID
 const decodeJid = (jid) => {
   if (!jid) return jid;
@@ -577,6 +576,7 @@ module.exports = async (m, conn, store, db, cmd) => {
   const command = m.text && prefix ? m.text.replace(prefix, "").trim().split(/ +/).shift().toLowerCase() : "";
   const text = m.text && prefix ? m.text.replace(new RegExp("^" + escapeRegExp(prefix + command), "i"), "").trim() : "";
   const args = text.split(/ +/).filter(a => a);
+    // Misal di dalam messages.upsert atau handler utama
 
   // --- Logika Penanganan ---
   if (settings.self && !isOwner) return;
@@ -585,133 +585,147 @@ module.exports = async (m, conn, store, db, cmd) => {
   }
 
   // --- Penanganan Sesi Interaktif (DIPERBAIKI) ---
+  // Cek hanya jika pesan merupakan balasan (quoted)
   if (m.quoted && m.sender) {
+    // Kunci sesi dibuat unik untuk setiap user di setiap chat
     const sessionKey = `${m.from}:${m.sender}`; 
     const session = global.interactiveSessions.get(sessionKey);
 
+    // Cek jika ada sesi aktif untuk user ini DAN user membalas pesan yang benar
     if (session && session.messageId === m.quoted.id) {
       try {
-        await session.callback(m);
-        global.interactiveSessions.delete(sessionKey);
+        await session.callback(m); // Jalankan fungsi callback dari sesi
+        global.interactiveSessions.delete(sessionKey); // Hapus sesi setelah berhasil
       } catch (e) {
         m.reply("Terjadi kesalahan saat memproses balasan Anda.");
         console.error("Interactive Session Error:", e);
       }
-      return;
+      return; // Hentikan pemrosesan perintah normal karena ini adalah balasan sesi
     }
   }
 
   // --- Panggil Case Handler ---
+  // Jalankan case handler terlebih dahulu, ia akan menangani perintah yang ada di dalamnya.
   await caseHandler(m, { conn, isOwner, prefix, command, text, user, db, Func, cmd });
 
-  // --- Eksekusi Semua Handler dalam Satu Loop ---
+  // --- Eksekusi Perintah dari Plugin ---
   const context = {
-    conn,
-    text,
-    args,
-    isOwner,
-    isPremium,
-    isAdmin,
-    isBotAdmin,
-    user,
-    group,
-    settings,
-    groupMetadata,
-    db,
-    Func,
-    store,
-    usedPrefix: prefix,
-    command,
-    cmd
-  };
-
-  // Loop melalui semua plugin sekali saja
-  for (let handler of Object.values(cmd.plugins)) {
-    if (typeof handler !== 'object' && typeof handler !== 'function') continue;
-    
+  conn,
+  text,
+  args,
+  isOwner,
+  isPremium,
+  isAdmin,
+  isBotAdmin,
+  user,
+  group,
+  settings,
+  groupMetadata,
+  db,
+  Func,
+  store,
+  usedPrefix: prefix,
+  command
+}
+for (let plugin of Object.values(cmd.plugins)) {
+  if (typeof plugin.before === 'function') {
     try {
-      // 1. Jalankan handler.before jika ada (untuk SEMUA plugin)
-      if (typeof handler.before === 'function') {
-        const stop = await handler.before(m, context);
-        if (stop === true) {
-          console.log(`Plugin ${handler.command || 'unknown'} menghentikan proses via before`);
-          return; // Hentikan SEMUA pemrosesan
-        }
-      }
-
-      // 2. Jalankan handler.all jika ada (untuk SEMUA plugin)
-      if (typeof handler.all === 'function') {
-        await handler.all(m, context);
-      }
-
-      // 3. Jalankan handler.onMessage jika ada (untuk SEMUA plugin)
-      if (typeof handler.onMessage === 'function') {
-        await handler.onMessage(m, context);
-      }
-
-      // 4. Cek apakah ini command yang sesuai
-      const isCmd = handler.command && Array.isArray(handler.command) && 
-                    handler.command.includes(command);
-      
-      if (isCmd) {
-        incrementCommand(command);
-        
-        // --- Validasi Aturan Plugin ---
-        if (handler.owner && !isOwner) {
-          m.reply("Perintah ini hanya untuk Owner Bot.");
-          continue; // Lanjut ke plugin berikutnya
-        }
-        if (handler.premium && !isPremium) {
-          conn.sendMessage(m.chat, { react: { text: `✖️`, key: m.key }});
-          continue;
-        }
-        if (handler.group && !m.isGroup) {
-          m.reply("Perintah ini hanya bisa digunakan di dalam grup.");
-          continue;
-        }
-        if (handler.admin && !isAdmin) {
-          m.reply("Perintah ini hanya untuk admin grup.");
-          continue;
-        }
-        if (handler.botAdmin && !isBotAdmin) {
-          m.reply("Jadikan bot sebagai admin untuk menggunakan perintah ini.");
-          continue;
-        }
-        if (handler.register && !user.registered) {
-          m.reply("Anda harus terdaftar untuk menggunakan perintah ini. Ketik .daftar Name.umur");
-          continue;
-        }
-        if (handler.limit && !isOwner && !isPremium) {
-          const limitAmount = typeof handler.limit === 'number' ? handler.limit : 1;
-          if (!Func.useLimit(user, limitAmount)) {
-            m.reply(`Limit Anda tidak cukup. Sisa limit: ${user.limit}`);
-            continue;
-          }
-        }
-
-        // --- Eksekusi Handler Utama ---
-        await handler(m, context);
-        break; // Hentikan loop setelah menemukan dan menjalankan perintah yang cocok
-      }
-
+      const stop = await plugin.before(m, context);
+      if (stop) return; // Stop semua jika diminta stop
     } catch (e) {
-      if (typeof e === 'string') {
-        m.reply(e);
+      console.error("Error di plugin.before:", e);
+    }
+  }
+}
+for (let plugin of Object.values(cmd.plugins)) {
+  if (typeof plugin.all === 'function') {
+    try {
+     await plugin.all(m, context);
+    } catch (e) {
+      console.error("Error di plugin.all:", e);
+    }
+  }
+}
+if (!command) return;
+ for (let handler of Object.values(cmd.plugins)) {
+    if (typeof handler !== 'function' && typeof handler !== 'object') continue;
+    
+    // Cek apakah ada fungsi 'onMessage' untuk dijalankan pada setiap pesan
+    if (typeof handler.onMessage === 'function') {
+        await handler.onMessage(m, { conn, text, args, isOwner, isPremium, isAdmin, isBotAdmin, user, group, settings, db, Func });
+    }
+
+    const isCmd = handler.command && handler.command.includes(command);
+           if (isCmd) {
+  incrementCommand(command);
+}   
+if (!isCmd) continue;
+  try {
+      // --- Validasi Aturan Plugin ---
+      if (handler.owner && !isOwner) {
+        m.reply("Perintah ini hanya untuk Owner Bot.");
         continue;
       }
-      
-      console.error(`Error pada plugin '${handler.command || 'unknown'}':`, e);
-      const errorMessage = `*[ ERROR REPORT ]*\n\n*Perintah:* ${command}\n*Plugin:* ${handler.command || 'unknown'}\n*User:* ${m.name} (${m.jid})\n*Error:* \n\`\`\`${util.format(e)}\`\`\``;
+      if (handler.premium && !isPremium) {
+        conn.sendMessage(m.chat, { react: { text: `✖️`, key: m.key }})
+        continue;
+      }
+      if (handler.group && !m.isGroup) {
+        m.reply("Perintah ini hanya bisa digunakan di dalam grup.");
+        continue;
+      }
+      if (handler.admin && !isAdmin) {
+        m.reply("Perintah ini hanya untuk admin grup.");
+        continue;
+      }
+      if (handler.botAdmin && !isBotAdmin) {
+        m.reply("Jadikan bot sebagai admin untuk menggunakan perintah ini.");
+        continue;
+      }
+      if (handler.register && !user.registered) {
+        m.reply("Anda harus terdaftar untuk menggunakan perintah ini. Ketik .daftar Name.umur");
+        continue;
+      }
+     if (handler.limit && !isOwner && !isPremium) {
+        const limitAmount = typeof handler.limit === 'number' ? handler.limit : 1;
+        if (!Func.useLimit(user, limitAmount)) {
+          m.reply(`Limit Anda tidak cukup. Sisa limit: ${user.limit}`);
+          continue;
+        }
+      }
+      // --- Eksekusi Handler Utama ---
+      await handler(m, {
+        conn,
+        text,
+        args,
+        isOwner,
+        isPremium,
+        isAdmin,
+        isBotAdmin,
+        user,
+        groupMetadata,
+        group,
+        settings,
+        db,
+        Func,
+        store,
+        cmd,
+        usedPrefix: prefix, // Kirim prefix yang digunakan ke plugin
+        command, // Kirim command yang digunakan ke plugin
+      });
+      break; // Hentikan loop setelah menemukan dan menjalankan perintah yang cocok
+
+    } catch (e) {
+         if (typeof e === 'string') return m.reply(e);
+      console.error(`Error pada perintah '${command}':`, e);
+      const errorMessage = `*[ ERROR REPORT ]*\n\n*Perintah:* ${command}\n*User:* ${m.name} (${m.jid})\n*Error:* \n\`\`\`${util.format(e)}\`\`\``;
       
       // Kirim laporan error ke semua owner
       const allOwners = [...env.owner.map(o => `${o}@s.whatsapp.net`), ...ownerList];
       for (let ownerJid of allOwners) {
-        await conn.sendMessage(ownerJid, { text: errorMessage });
+        conn.sendMessage(ownerJid, { text: errorMessage });
       }
-      
-      if (isCmd) {
-        m.reply("Terjadi kesalahan pada perintah ini. Laporan telah dikirim ke Owner.");
-      }
+      m.reply("Terjadi kesalahan pada perintah ini. Laporan telah dikirim ke Owner.");
     }
   }
 };
