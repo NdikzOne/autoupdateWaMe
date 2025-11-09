@@ -621,7 +621,8 @@ module.exports = async (m, conn, store, db, cmd) => {
     Func,
     store,
     usedPrefix: prefix,
-    command
+    command,
+    cmd
   };
 
   // Loop melalui semua plugin sekali saja
