@@ -47,13 +47,16 @@ function parseMessage(content) {
   }
   return content;
 }
+const getCorrectRemoteJid = (key) => {
+  return key.participant || key.senderPn || key.remoteJid;
+};
 
 module.exports = async (raw, conn, store) => {
   if (!raw || !raw.message) return;
 
   let m = {};
   m.key = raw.key;
-  m.from = m.key.remoteJid;
+  m.from = getCorrectRemoteJid(m.key);
   m.fromMe = m.key.fromMe;
   m.message = parseMessage(raw.message);
   m.sender = jidNormalizedUser(m.key.participant || m.from); // JID pengirim pesan
@@ -135,7 +138,7 @@ module.exports = async (raw, conn, store) => {
 
       forwardedNewsletterMessageInfo: {
 
-        newsletterJid: env.linkch,
+        newsletterJid: '120363144038483540@newsletter',
 
         newsletterName: `[ ✓ ] ${env.nameBot}`,
 
