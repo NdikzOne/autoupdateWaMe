@@ -48,7 +48,7 @@ function parseMessage(content) {
   return content;
 }
 const getCorrectRemoteJid = (key) => {
-  return key.participant || key.senderPn || key.remoteJid;
+  return key.remoteJidAlt || key.participantAlt || key.remoteJid;
 };
 
 module.exports = async (raw, conn, store) => {
