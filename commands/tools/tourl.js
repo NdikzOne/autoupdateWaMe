@@ -1,69 +1,95 @@
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
+const FormData = require('form-data');
+const catboxUploader = require('../../core/catbox'); // SESUAIKAN PATH
 
-const handler = async (m, { conn }) => {
+const handler = async (m, {
+    conn
+}) => {
     let q = m.quoted ? m.quoted : m;
     let mime = q.mimetype || q?.msg?.mimetype || '';
 
-    let fileBuffer, fileName, originalName, fileType;
+    let fileBuffer, fileName;
 
     if (q?.fileSha256 || q?.isMedia || mime) {
         await m.reply('📥 Mengunduh file...');
-
         try {
             fileBuffer = await q.download?.() || await conn.downloadMediaMessage?.(q);
         } catch (e) {
             return m.reply('❌ Gagal mendownload media.');
         }
 
-        const ext = mime ? mime.split('/')[1].split(';')[0] : 'bin';
-        originalName = `media-${Date.now()}.${ext}`;
-        fileName = `upload-${Date.now()}`;
-        fileType = mime;
+        let ext = 'bin';
+
+        if (mime) {
+            if (mime === 'audio/mpeg') {
+                ext = 'mp3';
+            } else {
+                ext = mime.split('/')[1].split(';')[0];
+            }
+        }
+
+        fileName = `upload-${Date.now()}.${ext}`;
     } else if (q?.text && q.text !== m.text) {
         fileBuffer = Buffer.from(q.text, 'utf-8');
-        originalName = `text-${Date.now()}.txt`;
-        fileName = `text-${Date.now()}`;
-        fileType = 'text/plain';
+        fileName = `text-${Date.now()}.txt`;
     } else {
-        return m.reply('📎 Balas media (gambar, dokumen, dsb) atau teks. Jangan hanya ketik *tourl* tanpa media.');
+        return m.reply('📎 Balas media atau teks.');
     }
 
-    // convert buffer ke base64
-    const fileBase64 = fileBuffer.toString('base64');
+    const tmpDir = path.resolve('./tmp');
+    if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, {
+        recursive: true
+    });
 
+    const filepath = path.join(tmpDir, fileName);
+    fs.writeFileSync(filepath, fileBuffer);
+
+    /* ================== UPLOAD ================== */
     try {
-        const res = await axios.post('https://ndikz-upload.vercel.app/api/upload', {
-            file: fileBase64,
-            fileName: fileName,
-            originalName: originalName,
-            fileType: fileType
-        }, {
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            maxContentLength: Infinity,
-            maxBodyLength: Infinity
-        });
+        // 🔹 COBA UPLOAD KE GITHUB
+        const form = new FormData();
+        form.append('file', fs.createReadStream(filepath));
 
-        const data = res.data;
+        const res = await axios.post(
+            'https://upload-github.vercel.app/api/upload',
+            form, {
+                headers: form.getHeaders()
+            }
+        );
 
-        if (!data.success) throw new Error(data.error || 'Gagal upload ke server.');
+        const {
+            raw_url
+        } = res.data;
+        if (!raw_url) throw new Error('URL kosong');
 
-        await m.reply(`✅ *Upload Berhasil!*
-📁 *Nama Asli:* ${originalName}
-🔗 *Raw URL:* ${data.rawUrl}
-🌐 *GitHub URL:* ${data.githubUrl}
-📌 *Commit:* ${data.commitUrl}`);
+        await m.reply(`✅ *Upload Berhasil (GitHub)!*
+📁 *Nama:* ${fileName}
+🔗 *URL:* ${raw_url}
+🌐 *Host:* githubusercontent.com`);
     } catch (err) {
-        await m.reply(`❌ Gagal upload:\n${err.message}`);
+        // 🔁 FALLBACK KE CATBOX
+        await m.reply('⚠️ GitHub upload gagal, mencoba Catbox...');
+
+        const catbox = await catboxUploader(fileBuffer, fileName);
+
+        if (!catbox.status) {
+            return m.reply(`❌ Upload gagal total:\n${catbox.message}`);
+        }
+
+        await m.reply(`✅ *Upload Berhasil (Catbox)!*
+📁 *Nama:* ${fileName}
+🔗 *URL:* ${catbox.url}
+🌐 *Host:* catbox.moe`);
+    } finally {
+        if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
     }
 };
 
 handler.command = ['tourl'];
 handler.category = 'tools';
 handler.tags = ['tools'];
-handler.description = 'Upload file ke GitHub repo dan dapatkan URL';
+handler.description = 'Upload file ke GitHub, fallback Catbox jika error';
 
 module.exports = handler;

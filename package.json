@@ -15,7 +15,7 @@
     "archiver": "^7.0.1",
     "awesome-phonenumber": "^7.5.0",
     "axios": "^1.9.0",
-    "baileys": "npm:@fuxxy-star/baileys",
+    "baileys": "github:tenka-san/WaBails",
     "btch-downloader": "^4.0.15",
     "canvafy": "^7.2.1",
     "canvas": "^3.2.0",
@@ -50,7 +50,7 @@
     "process": "^0.11.10",
     "qrcode": "^1.5.4",
     "qrcode-terminal": "0.12.0",
-    "sharp": "^0.34.3",
+    "sharp": "^0.32.6",
     "similarity": "^1.2.1",
     "simple-git": "^3.28.0",
     "spinnies": "^0.5.1",
@@ -63,3 +63,4 @@
   "keywords": [],
   "type": "commonjs"
 }
+

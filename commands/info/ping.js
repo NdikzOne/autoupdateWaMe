@@ -1,6 +1,8 @@
 // File: commands/tools/ping.js
 const os = require("os");
-const { performance } = require("perf_hooks");
+const {
+    performance
+} = require("perf_hooks");
 
 const formatTime = sec => {
     const days = Math.floor(sec / (3600 * 24));
@@ -11,9 +13,12 @@ const formatTime = sec => {
     return `${days} Hari ${hours} Jam ${minutes} Menit ${seconds} Detik`;
 };
 
-const handler = async (m, { conn }) => {
+const handler = async (m, {
+    conn
+}) => {
     const start = performance.now();
-    await conn.reply(m.chat, "Pinging...", m);
+
+    // Mengukur ping/latency
     const latency = (performance.now() - start).toFixed(2);
 
     // Uptime bot
@@ -34,17 +39,54 @@ const handler = async (m, { conn }) => {
     const usedMem = totalMem - freeMem;
     const memPercent = ((usedMem / totalMem) * 100).toFixed(2);
 
+    // Hitung dalam GB
+    const usedGB = Math.floor(usedMem / 1024 / 1024 / 1024);
+    const totalGB = Math.floor(totalMem / 1024 / 1024 / 1024);
+
     // OS info
     const osType = os.type();
     const osRelease = os.release();
     const platform = os.platform();
     const arch = os.arch();
 
-    const msg = `
-*📡 PING & SYSTEM INFO*
-🏓 Ping: *${latency} ms*
-⏳ Uptime Bot: *${formatTime(uptimeSec)}*
-🖥 Runtime System: *${formatTime(runtimeSec)}*
+    // Kirim sebagai poll result message
+    await conn.sendMessage(m.chat, {
+        pollResultMessage: {
+            name: "📊 System Information",
+            pollVotes: [{
+                    optionName: "🏓 Ping Speed",
+                    optionVoteCount: Math.max(1, Math.floor(latency))
+                },
+                {
+                    optionName: "💾 RAM Used",
+                    optionVoteCount: usedGB
+                },
+                {
+                    optionName: "📦 Total RAM",
+                    optionVoteCount: totalGB
+                },
+                {
+                    optionName: "⏳ Bot Uptime",
+                    optionVoteCount: Math.floor(uptimeSec / 3600) // dalam jam
+                }
+            ],
+            newsletter: {
+                newsletterJid: env.linkch,
+                newsletterName: env.nameBot
+            }
+        }
+    }, {
+        quoted: m
+    });
+
+    // Kirim informasi lengkap sebagai teks juga (opsional)
+    const detailedInfo = `
+*📡 DETAILED SYSTEM INFO*
+
+*⏱ WAKTU*
+• Ping: *${latency} ms*
+• Uptime Bot: *${formatTime(uptimeSec)}*
+• Runtime System: *${formatTime(runtimeSec)}*
 
 *💻 CPU*
 • Model: ${cpuModel}
@@ -53,26 +95,23 @@ const handler = async (m, { conn }) => {
 
 *📦 RAM*
 • Total: ${(totalMem / 1024 / 1024 / 1024).toFixed(2)} GB
-• Used: ${(usedMem / 1024 / 1024 / 1024).toFixed(2)} GB
+• Used: ${(usedMem / 1024 / 1024 / 1024).toFixed(2)} GB (${memPercent}%)
 • Free: ${(freeMem / 1024 / 1024 / 1024).toFixed(2)} GB
-• Usage: ${memPercent}%
 
-*🖥 OS*
-• Type: ${osType}
-• Release: ${osRelease}
+*🖥 SISTEM*
+• OS: ${osType} ${osRelease}
 • Platform: ${platform}
-• Arch: ${arch}
-
-*🔧 Node.js*
-• Version: ${process.version}
+• Architecture: ${arch}
+• Node.js: ${process.version}
 `.trim();
 
-    await conn.reply(m.chat, msg, m);
+    // Kirim info detail sebagai pesan follow-up
+    await conn.reply(m.chat, detailedInfo, m);
 };
 
 handler.command = ["ping"];
 handler.category = "info";
-handler.description = "Cek ping, uptime, dan informasi sistem";
+handler.description = "Cek ping, uptime, dan informasi sistem dengan poll message";
 handler.owner = false;
 
 module.exports = handler;
