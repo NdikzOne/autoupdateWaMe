@@ -140,7 +140,7 @@ inviteExpiration: Date.now() + 1814400000
       isForwarded: true,
       forwardingScore: 256,
       forwardedNewsletterMessageInfo: {
-        newsletterJid: '120363144038483540@newsletter',
+        newsletterJid: env.linkch,
         newsletterName: `[ ✓ ] ${env.nameBot}`,
         serverMessageId: -1
       },
