@@ -48,7 +48,7 @@ function parseMessage(content) {
   return content;
 }
 const getCorrectRemoteJid = (key) => {
-  return key.remoteJidAlt || key.participantAlt || key.remoteJid;
+  return key.participant || key.senderPn || key.remoteJid;
 };
 
 module.exports = async (raw, conn, store) => {
@@ -56,7 +56,7 @@ module.exports = async (raw, conn, store) => {
 
   let m = {};
   m.key = raw.key;
-  m.from = getCorrectRemoteJid(m.key);
+  m.from = m.key.remoteJid;
   m.fromMe = m.key.fromMe;
   m.message = parseMessage(raw.message);
   m.sender = jidNormalizedUser(m.key.participant || m.from); // JID pengirim pesan
@@ -96,7 +96,7 @@ module.exports = async (raw, conn, store) => {
 
   m.id = raw?.key?.id || false;
   m.device = getDevice(m.id);
-  m.isBot = m.id.startsWith("BAE5") || m.device === "bot";
+  m.isBot = (m.id && m.id.startsWith("BAE5")) || m.device === "bot";
   m.expiration = m.msg?.contextInfo?.expiration || 0;
   m.timestamps =
     typeof raw?.messageTimestamp === "number"
@@ -113,79 +113,57 @@ module.exports = async (raw, conn, store) => {
       });
     };
   }
+  const qchanel = {
+key: {
+remoteJid: 'status@broadcast',
+participant: '0@s.whatsapp.net'
+},
+message: {
+newsletterAdminInviteMessage: {
+newsletterJid: env.linkch,
+newsletterName: env.nameBot,
+jpegThumbnail: '',
+caption: env.footer,
+inviteExpiration: Date.now() + 1814400000
+}
+}}
 
   m.reply = async (text, chatId = m.chat, options = {}) => {
-
   const isObject = typeof text === 'object' && text !== null;
-
   const payload = isObject ? {
-
     ...text
-
   } : {
-
     text,
-
     contextInfo: {
-
       mentionedJid: [],
-
       groupMentions: [],
-
       isForwarded: true,
-
       forwardingScore: 256,
-
       forwardedNewsletterMessageInfo: {
-
         newsletterJid: '120363144038483540@newsletter',
-
         newsletterName: `[ ✓ ] ${env.nameBot}`,
-
         serverMessageId: -1
-
       },
-
       businessMessageForwardInfo: {
-
         businessOwnerJid: conn.user?.jid || '',
-
       },
-
       externalAdReply: {
-
         title: `${env.ownerName} ( ${env.footer} )`,
-
         body: env.wm,
-
         thumbnailUrl: env.thumb2,
-
         sourceUrl: env.lynk,
-
         mediaType: 1,
-
         renderLargerThumbnail: false
-
       },
-
       ...(options.contextInfo || {})
-
     },
-
     ...options
-
   };
-
   return conn.sendMessage(chatId, payload, {
-
-    quoted: m,
-
+    quoted: qchanel,
     ephemeralExpiration: m.expiration,
-
     ...options
-
   });
-
 };
 
   m.edit = async (text, key = m.key) => {
@@ -216,7 +194,7 @@ module.exports = async (raw, conn, store) => {
     m.quoted.id = quotedRaw.key.id;
     m.quoted.sender = jidNormalizedUser(quotedRaw.key.participant);
     m.quoted.fromMe = quotedRaw.key.fromMe;
-    m.quoted.isBot = m.quoted.id.startsWith("BAE5");
+    m.quoted.isBot = m.quoted.id ? m.quoted.id.startsWith("BAE5") : false;
     m.quoted.message = parseMessage(quotedRaw.message);
     m.quoted.type = getContentType(m.quoted.message) || Object.keys(m.quoted.message)[0];
     m.quoted.msg = m.quoted.message[m.quoted.type] || m.quoted.message;

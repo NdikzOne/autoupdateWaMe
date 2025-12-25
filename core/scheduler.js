@@ -2,6 +2,8 @@ const axios = require("axios");
 const cheerio = require("cheerio");
 const moment = require("moment-timezone");
 const fs = require('fs');
+const path = require("path");
+const { spawn } = require("child_process");
 const env = require("../settings.js");
 
 // Fungsi scraping anime terbaru
@@ -100,8 +102,7 @@ global.db.list().chats ||= {};
         if (currentTime === '00:01') {
             await initializeScheduler();
         }
-
-        const activeGroups = Object.entries(global.db.list().chats || {})
+const activeGroups = Object.entries(global.db.list().chats || {})
             .filter(([id, chat]) => chat.notifadzan && id.endsWith('@g.us'));
         
         if (activeGroups.length === 0) return;
@@ -123,28 +124,67 @@ global.db.list().chats ||= {};
                 if (currentTime === time && chat.lastAdzanNotif !== `${now.format('YYYY-MM-DD')}-${prayer}`) {
                     console.log(`[Scheduler] Waktu ${prayer} untuk grup ${gid}`);
                     
-                    const audioPath = prayer === 'Subuh' ? './core/media/subuh.mp3' : './core/media/adzan.mp3';
-                    
-                    if (fs.existsSync(audioPath)) {
-                       await conn.sendMessage(gid, {
-                            audio: fs.readFileSync(audioPath),
-                            mimetype: 'audio/mpeg',
-                            ptt: true,
-                            contextInfo: {
-                                externalAdReply: {
-                                    title: `Waktu Sholat ${prayer}`,
-                                    body: `Wilayah ${location.charAt(0).toUpperCase() + location.slice(1)} dan sekitarnya`,
-                                    thumbnailUrl: env.thumb2,
-                                    sourceUrl: env.lynk || 'https://lipxz.com',
-                                    mediaType: 2,
-                                }
-                            }
-                        });
+                    const audioURL =
+    prayer === "Subuh"
+        ? "https://github.com/NdikzOne/Img-Alya/raw/refs/heads/master/subuh.mp3"
+        : "https://github.com/NdikzOne/Img-Alya/raw/refs/heads/master/adzan.mp3";
+
+
+// Buat folder tmp
+const tmpDir = path.resolve('./tmp');
+if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir);
+
+// Path file
+const timestamp = Date.now();
+const inputPath = path.join(tmpDir, `audio-${timestamp}.mp3`);
+const outputPath = path.join(tmpDir, `audio-${timestamp}.mp3`);
+
+
+// 1. Download dari URL
+const writer = fs.createWriteStream(inputPath);
+const response = await axios.get(audioURL, { responseType: "stream" });
+
+await new Promise((resolve, reject) => {
+    response.data.pipe(writer);
+    writer.on("finish", resolve);
+    writer.on("error", reject);
+});
+
+
+// 2. Convert MP3 → OGG/OPUS untuk VN
+await new Promise((resolve, reject) => {
+    spawn("ffmpeg", [
+        "-i", inputPath,
+        "-vn",
+        "-c:a", "libopus",
+        outputPath
+    ])
+    .on("error", reject)
+    .on("close", resolve);
+});
+
+
+// 3. Kirim ke grup
+const buffer = fs.readFileSync(outputPath);
+
+await conn.sendMessage(gid, {
+  audio: buffer,
+  mimetype: 'audio/mpeg',
+  ptt: true,
+  contextInfo: {
+    externalAdReply: {
+      title: 'CNN Indonesia - Azan Subuh',
+      body: 'https://youtu.be/x6FYSoqBAt8',
+      mediaType: 2,
+      thumbnailUrl: 'https://i.ytimg.com/vi/x6FYSoqBAt8/hqdefault.jpg',
+      sourceUrl: 'https://youtu.be/x6FYSoqBAt8'
+    }
+  }
+});
                         chat.lastAdzanNotif = `${now.format('YYYY-MM-DD')}-${prayer}`;
                         await db.save();
-                    } else {
-                        console.warn(`[Scheduler] File audio tidak ditemukan di: ${audioPath}`);
-                    }
+                        fs.unlinkSync(inputPath);
+fs.unlinkSync(outputPath);
                 }
             }
         }
