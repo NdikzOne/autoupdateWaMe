@@ -1,5 +1,4 @@
 const env = require("../settings.js");
-const fs = require("fs");
 const {
   extractMessageContent,
   jidNormalizedUser,
@@ -128,54 +127,6 @@ caption: env.footer,
 inviteExpiration: Date.now() + 1814400000
 }
 }}
-const testqc = {
-  key: {
-    fromMe: false,
-    participant: "0@s.whatsapp.net",
-    remoteJid: "status@broadcast"
-  },
-  message: {
-    interactiveMessage: {
-      header: {
-        hasMediaAttachment: true,
-        jpegThumbnail: fs.readFileSync('../img.jpg')
-      },
-      nativeFlowMessage: {
-        buttons: [
-          {
-            name: env.ownerName,
-            buttonParamsJson: JSON.stringify({
-              currency: "IDR",
-              payment_configuration: "",
-              payment_type: "",
-              total_amount: { value: 72050000, offset: 100 },
-              reference_id: "X",
-              type: "physical-goods",
-              order: {
-                status: "preparing_to_ship",
-                description: "",
-                subtotal: { value: 72050000, offset: 100 },
-                order_type: "ORDER",
-                items: [
-                  {
-                    retailer_id: "25127408720248432",
-                    product_id: "25127408720248432",
-                    name: env.nameBot,
-                    amount: { value: 72050000, offset: 100 },
-                    quantity: 1
-                  }
-                ]
-              },
-              additional_note: "",
-              native_payment_methods: [],
-              share_payment_status: false
-            })
-          }
-        ]
-      }
-    }
-  }
-}
 
   m.reply = async (text, chatId = m.chat, options = {}) => {
   const isObject = typeof text === 'object' && text !== null;
@@ -209,7 +160,7 @@ const testqc = {
     ...options
   };
   return conn.sendMessage(chatId, payload, {
-    quoted: testqc,
+    quoted: qchanel,
     ephemeralExpiration: m.expiration,
     ...options
   });
