@@ -127,7 +127,7 @@ caption: env.footer,
 inviteExpiration: Date.now() + 1814400000
 }
 }}
-const rnp = {
+const testqc = {
   key: {
     fromMe: false,
     participant: "0@s.whatsapp.net",
@@ -208,7 +208,7 @@ const rnp = {
     ...options
   };
   return conn.sendMessage(chatId, payload, {
-    quoted: qchanel,
+    quoted: testqc,
     ephemeralExpiration: m.expiration,
     ...options
   });
