@@ -1,4 +1,5 @@
 const env = require("../settings.js");
+const fs = require("fs");
 const {
   extractMessageContent,
   jidNormalizedUser,
